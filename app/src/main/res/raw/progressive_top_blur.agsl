@@ -1,0 +1,20 @@
+uniform shader content;
+uniform float fadeEnd;
+uniform float maxSigma;
+uniform float2 axis;
+
+half4 main(float2 p) {
+    float strength = 1.0 - smoothstep(0.0, fadeEnd, p.y);
+    float sigma = maxSigma * strength;
+    if (sigma < 0.05) return content.eval(p);
+
+    half4 color = half4(0.0);
+    float weightSum = 0.0;
+    for (int i = -16; i <= 16; ++i) {
+        float offset = float(i) * 0.1875;
+        float weight = exp(-0.5 * offset * offset);
+        color += content.eval(p + axis * sigma * offset) * half(weight);
+        weightSum += weight;
+    }
+    return color / half(weightSum);
+}

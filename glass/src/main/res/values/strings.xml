@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="snooze">稍后提醒</string>
+    <string name="slide_to_stop">滑动以停止</string>
+    <string name="stop_action">停止闹铃</string>
+    <string name="stop_progress">停止进度 %1$d%%</string>
+</resources>

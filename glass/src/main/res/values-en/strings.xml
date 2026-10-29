@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="snooze">Snooze</string>
+    <string name="slide_to_stop">slide to stop</string>
+    <string name="stop_action">Stop alarm</string>
+    <string name="stop_progress">Stop progress %1$d%%</string>
+</resources>

@@ -1,0 +1,38 @@
+package tech.hezy.glassalarmslider
+
+import kotlin.math.PI
+
+public enum class GlassParameter(val defaultValue: Float, val min: Float, val max: Float) {
+    THICKNESS(28f, -60f, 60f),
+    IOR(1.50f, 1f, 2f),
+    CHROMATIC_ABERRATION(0.012f, 0f, 0.08f),
+    CURVATURE(0.30f, 0f, 1f),
+    LENS_DEPTH(48f, 0f, 80f),
+    MAGNIFICATION(1f, 1f, 1.6f),
+    EDGE_POWER(1.2f, 0.5f, 4f),
+    RIM_WIDTH(0.53f, 0.25f, 8f),
+    RIM_INTENSITY(1f, 0f, 1.5f),
+    LIGHT_RADIUS(1f, 0f, 2f),
+    FRESNEL_F0(0.04f, 0f, 0.6f),
+    AMBIENT_ELEVATION(0.35f, 0f, 1f),
+    AMBIENT_RANGE(0.10f, 0.03f, 1f),
+    AMBIENT_HEIGHT(14f, 2f, 40f),
+    LIGHT_ANGLE(0f, -PI.toFloat(), PI.toFloat()),
+    LIGHT_INTENSITY(0.25f, 0f, 1.5f),
+    AMBIENT_STRENGTH(1.76f, 0f, 3f),
+    BODY_LIFT(0.10f, 0f, 0.3f),
+    ORANGE_R(1f, 0f, 1f),
+    ORANGE_G(135f / 255f, 0f, 1f),
+    ORANGE_B(41f / 255f, 0f, 1f),
+    ORANGE_DIMMING(0.90f, 0f, 1f),
+    LIGHT_R(1f, 0f, 1f),
+    LIGHT_G(0.99f, 0f, 1f),
+    LIGHT_B(0.82f, 0f, 1f),
+    GLASS_R(0.92f, 0f, 1.2f),
+    GLASS_G(0.95f, 0f, 1.2f),
+    GLASS_B(1.05f, 0f, 1.2f),
+    GLASS_A(0f, 0f, 1f),
+    SIZE_COEFFICIENT(4f, 1f, 5f),
+    SCALE_COEFFICIENT(1f, 0.15f, 1f),
+    BLUR_RADIUS(0f, 0f, 8f),
+}

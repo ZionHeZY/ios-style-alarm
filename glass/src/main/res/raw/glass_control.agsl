@@ -1,0 +1,63 @@
+uniform shader scene;
+uniform float2 resolution;
+uniform float4 lensBounds;
+uniform float density;
+uniform float press;
+uniform float4 tint;
+uniform float bodyLift;
+uniform float toggle;
+
+half3 sampleScene(float2 p) {
+    return scene.eval(clamp(p, float2(0.5), resolution - float2(0.5))).rgb;
+}
+
+half4 main(float2 point) {
+    float2 local = point - lensBounds.xy;
+    float2 halfSize = lensBounds.zw;
+    if (any(greaterThan(abs(local), halfSize + 8.0 * density))) return half4(0.0);
+    float radius = min(halfSize.x, halfSize.y);
+    float straight = max(halfSize.x - radius, 0.0);
+    float2 capsule = float2(local.x - clamp(local.x, -straight, straight), local.y);
+    float lengthToAxis = length(capsule);
+    float2 outward = lengthToAxis > 0.0001 ? capsule / lengthToAxis : float2(0.0, -1.0);
+    float sdf = lengthToAxis - radius;
+    float aa = max(abs(outward.x) + abs(outward.y), 1.0);
+    float coverage = 1.0 - smoothstep(-0.5 * aa, 0.5 * aa, sdf);
+    float shadowDistance = length(float2(capsule.x, capsule.y - 1.5 * density)) - radius;
+    float shadow = toggle * 0.12 * exp(-0.5 * pow(max(shadowDistance, 0.0) / (2.0 * density), 2.0));
+    if (coverage <= 0.0) return half4(0.0, 0.0, 0.0, shadow);
+    float optical = mix(1.0, press, toggle);
+
+    float depth = max(-sdf, 0.0);
+    float bevel = min(radius, mix(5.0 + press * 2.0, 5.0 * press, toggle) * density);
+    float incident = pow(1.0 - clamp(depth / max(bevel, 1.0), 0.0, 1.0), 1.5);
+    float normalZ = sqrt(max(1.0 - incident * incident, 0.0));
+    float transmitted = incident / 1.46;
+    float transmittedZ = sqrt(max(1.0 - transmitted * transmitted, 0.0));
+    float slope = (incident * transmittedZ - normalZ * transmitted) /
+        max(normalZ * transmittedZ + incident * transmitted, 0.0001);
+    float travel = mix(2.2 + press * 0.8, 10.0 * press, toggle) * density * slope;
+    float maxTravel = mix(5.0, 10.0, toggle) * density;
+    float e = exp(-2.0 * abs(travel) / maxTravel);
+    float offset = -sign(travel) * maxTravel * (1.0 - e) / (1.0 + e);
+    float2 refracted = point + outward * offset;
+    float2 dispersion = outward * incident * 0.32 * density * optical;
+    half3 transmission = half3(sampleScene(refracted + dispersion).r,
+        sampleScene(refracted).g, sampleScene(refracted - dispersion).b);
+    transmission = mix(transmission, half3(tint.rgb), half(tint.a));
+    float dome = smoothstep(0.0, radius, depth);
+    transmission = mix(transmission, half3(1.0), half(bodyLift * dome));
+
+    float2 lightDirection = normalize(float2(-0.45, -1.0));
+    float illumination = max(dot(outward, lightDirection), 0.0);
+    float opposite = max(dot(outward, -lightDirection), 0.0);
+    float rim = exp(-pow(depth / max(0.65 * density, 1.0), 2.0));
+    float fresnel = 0.04 + 0.96 * pow(incident, 5.0);
+    half3 reflectedScene = sampleScene(lensBounds.xy + outward * (radius * 1.8));
+    half3 reflected = mix(half3(0.22), reflectedScene, half(0.6));
+    half3 color = mix(transmission, reflected, half(fresnel * 0.32 * optical));
+    color += half3(1.0) * half(rim * (0.12 + 0.43 * pow(illumination, 6.0) + 0.1 * opposite) * optical);
+    color += half3(tint.rgb) * half(incident * illumination * 0.08 * (1.0 + press) * optical);
+    color *= half(1.0 - press * 0.06 * (1.0 - toggle));
+    return half4(clamp(color, 0.0, 1.0) * half(coverage), half(coverage + shadow * (1.0 - coverage)));
+}

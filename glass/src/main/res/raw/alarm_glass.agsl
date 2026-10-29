@@ -1,0 +1,137 @@
+uniform shader scene;
+uniform float4 thumb;
+uniform float4 light;
+uniform float density;
+uniform float brightness;
+uniform float lightAngle;
+uniform float2 resolution;
+uniform float lightAngleOffset;
+uniform float4 refraction;
+uniform float4 lens;
+uniform float4 reflection;
+uniform float4 ambient;
+uniform float4 lighting;
+uniform float4 glassColor;
+uniform float3 capture;
+uniform float4 captureBounds;
+uniform float overlayOnly;
+
+float capsuleDistance(float2 p, float2 halfSize) {
+    float radius = min(halfSize.x, halfSize.y);
+    float2 q = abs(p) - halfSize + radius;
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+}
+
+half4 sampleScene(float2 point) {
+    if (any(lessThan(point, float2(0.0))) || any(greaterThanEqual(point, resolution))) {
+        return half4(0.0, 0.0, 0.0, 1.0);
+    }
+    return scene.eval(point);
+}
+
+half3 sampleCapture(float2 point) {
+    if (overlayOnly > 0.0 &&
+        (any(lessThan(point, captureBounds.xy)) || any(greaterThanEqual(point, captureBounds.zw)))) {
+        return half3(0.0);
+    }
+    return sampleScene(point).rgb;
+}
+
+half3 sampleTransmission(float2 point, float edge) {
+    half3 sharp = sampleCapture(point);
+    if (capture.z <= 0.0 || edge >= 1.0) return sharp;
+    if (any(lessThan(point, float2(0.0))) || any(greaterThanEqual(point, resolution))) {
+        return mix(half3(0.0), sharp, half(edge));
+    }
+    half3 blurred = scene.eval(point + float2(0.0, resolution.y)).rgb;
+    return mix(blurred, sharp, half(edge));
+}
+
+half4 main(float2 point) {
+    half4 original = overlayOnly > 0.0 ? half4(0.0) : sampleScene(point);
+    float radius = thumb.z * thumb.w;
+    float2 local = point - thumb.xy;
+    if (any(greaterThan(abs(local), float2(radius + 1.0)))) return original;
+    float distance = length(local);
+    float2 outward = distance > 0.0001 ? local / distance : float2(0.0);
+    float sdf = distance - radius;
+    float aa = max(abs(outward.x) + abs(outward.y), 1.0);
+    float coverage = 1.0 - smoothstep(-0.5 * aa, 0.5 * aa, sdf);
+    if (coverage <= 0.0) return original;
+
+    float unit = density * thumb.w;
+    float depth = max(-sdf, 0.0);
+    float edge = 1.0 - smoothstep(0.0, radius * clamp(ambient.x, 0.03, 1.0), depth);
+    float bevel = max(mix(4.0, 40.0, clamp(refraction.w, 0.0, 1.0)) * unit, 1.0);
+    float incident = pow(1.0 - clamp(depth / bevel, 0.0, 1.0), max(lens.z, 0.1));
+    float normalZ = sqrt(max(1.0 - incident * incident, 0.0));
+    float transmitted = incident / max(refraction.y, 1.0);
+    float transmittedZ = sqrt(max(1.0 - transmitted * transmitted, 0.0));
+    float slope = (incident * transmittedZ - normalZ * transmitted)
+        / max(normalZ * transmittedZ + incident * transmitted, 0.0001);
+    float maxTravel = max(lens.x, 0.0) * unit;
+    float travel = refraction.x * unit * slope;
+    float offset = 0.0;
+    if (maxTravel > 0.0) {
+        float exponential = exp(-2.0 * abs(travel) / maxTravel);
+        offset = -sign(travel) * maxTravel * (1.0 - exponential) / (1.0 + exponential);
+    }
+    float2 refracted = point + local * (1.0 / max(lens.y, 1.0) - 1.0) + outward * offset;
+    float2 dispersion = outward * incident * (refraction.z * 36.0 * unit) * (edge * 0.7 + 0.3);
+    half3 transmittedColor;
+    if (dispersion.x == 0.0 && dispersion.y == 0.0) {
+        transmittedColor = sampleTransmission(refracted, edge);
+    } else {
+        transmittedColor = half3(
+            sampleTransmission(refracted + dispersion, edge).r,
+            sampleTransmission(refracted, edge).g,
+            sampleTransmission(refracted - dispersion, edge).b
+        );
+    }
+    transmittedColor = mix(transmittedColor, transmittedColor * half3(glassColor.rgb),
+        half(clamp(glassColor.a, 0.0, 1.0)));
+    float dome = clamp(depth / radius, 0.0, 1.0);
+    dome *= 2.0 - dome;
+    transmittedColor = mix(transmittedColor, half3(1.0), half(ambient.w * dome * dome * normalZ * normalZ));
+    float c = cos(lightAngleOffset), s = sin(lightAngleOffset);
+    float2 reflectionDirection = float2(c * outward.x + s * outward.y,
+        -s * outward.x + c * outward.y);
+    float2 reflectionPoint = thumb.xy + reflectionDirection * radius * (1.0 + 2.0 * reflection.y);
+    float sourceDistance = capsuleDistance(reflectionPoint - light.xy, light.zw);
+    float spread = (1.0 + clamp(reflection.w, 0.0, 1.0) * 80.0) * unit;
+    float visibility = 1.0 - smoothstep(-spread, spread, sourceDistance);
+    float sourceWidth = light.z * 2.0;
+    half3 leftColor = min(
+        sampleCapture(light.xy - float2(sourceWidth * 0.28, 0.0)),
+        sampleCapture(light.xy - float2(sourceWidth * 0.36, 0.0))
+    );
+    half3 rightColor = min(
+        sampleCapture(light.xy + float2(sourceWidth * 0.28, 0.0)),
+        sampleCapture(light.xy + float2(sourceWidth * 0.36, 0.0))
+    );
+    half3 sourceColor = (leftColor + rightColor) * half(0.5 / max(brightness, 0.001));
+    sourceColor *= half3(lighting.rgb);
+    float2 direction = float2(sin(lightAngle), -cos(lightAngle));
+    float illumination = max(dot(outward, direction), 0.0);
+    float rimWidth = clamp(lens.w, 0.25, 24.0) * unit;
+    float grazing = exp(-pow(depth / rimWidth, 2.0));
+    float f0 = clamp(reflection.z, 0.0, 1.0);
+    float reflectedFraction = clamp(reflection.x * (f0 * incident * incident + (1.0 - f0) * grazing), 0.0, 1.0);
+    float2 sourceDirection = normalize(light.xy - thumb.xy + float2(0.0, -0.0001));
+    half neutral = half((0.15 + 0.35 * max(dot(reflectionDirection, sourceDirection), 0.0))
+        * (ambient.z / 1.76));
+    half3 spectrum = half3(1.7, half(1.7 - min(refraction.z * 50.0, 0.8) * reflectionDirection.x), 1.7);
+    half3 reflected = mix(half3(neutral), sourceColor * spectrum, half(visibility));
+    half3 color = transmittedColor * half(1.0 - reflectedFraction) + reflected * half(reflectedFraction);
+
+    float deformation = clamp((thumb.w - 1.0) / 0.16, 0.0, 1.0);
+    float scatterWidth = max(ambient.y, 0.1) * unit * (0.95 + 0.25 * deformation);
+    float scatterDepth = (depth + rimWidth) / scatterWidth;
+    float halo = ambient.z * (0.17 + 0.02 * deformation) * illumination * illumination
+        * exp(-scatterDepth * scatterDepth);
+    half3 scattered = mix(sourceColor, half3(sourceColor.r), half(0.02 + 0.06 * deformation));
+    color += scattered * half(halo * (1.0 - reflectedFraction));
+    float specular = pow(illumination, 8.0) * visibility;
+    color += half3(half(specular * lighting.w * reflectedFraction));
+    return mix(original, half4(clamp(color, 0.0, 1.0), 1.0), half(coverage));
+}
