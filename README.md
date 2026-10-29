@@ -1,5 +1,7 @@
 # iOS-Style Alarm for Android
 
+**简体中文** | [English](README.en.md)
+
 基于 Jetpack Compose 与 Android 13+ AGSL (`RuntimeShader`) 实现的 iOS 风格闹钟应用，包含独立封装的液态玻璃（Liquid Glass）光学控件库 `:glass`。
 
 公开版使用 Android 系统字体与通用几何闹钟图标，不包含 Apple 字体或 SF Symbols 资源。三张界面截图、液态玻璃滑块特写与全屏响铃动图均录自公开版；列表滚动、顶栏模糊及编辑面板动图保留早期本地研究版演示，字体及小图标可能不同，液态玻璃渲染与手势实现相同。本项目与 Apple 无隶属关系。
