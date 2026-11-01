@@ -118,6 +118,16 @@ $$\sigma(y) = \sigma_{\max} \cdot \left(1 - \text{smoothstep}(0, y_{\text{fadeEn
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+### GitHub Actions 下载 APK
+
+推送到 `main` 或向 `main` 提交 Pull Request 时，`Build APK` 工作流会自动编译 Debug APK；也支持手动触发，无需配置 Secrets 或签名文件。
+
+1. 打开仓库的 **Actions → Build APK → Run workflow**，选择分支后开始构建。
+2. 构建成功后，进入该次运行页面，在 **Artifacts** 下载 `ios-style-alarm-debug-<运行编号>`。
+3. 解压下载的 ZIP，将 `app-debug.apk` 安装到 Android 13+ 设备。
+
+构建产物保留 **14 天**。APK 使用临时 Debug 签名，仅供体验和测试，不是商店发布包；不同运行或本地构建的签名可能不同，无法覆盖安装时需要先卸载旧版（会清除应用数据）。
+
 ---
 
 ## License

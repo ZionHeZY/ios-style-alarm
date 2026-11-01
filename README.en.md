@@ -120,6 +120,16 @@ Install **Android SDK Platform 35**. The first build requires network access to 
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
+### Download an APK from GitHub Actions
+
+The `Build APK` workflow builds a debug APK on pushes to `main` and pull requests targeting `main`. It also supports manual runs and requires no secrets or signing files.
+
+1. Open **Actions → Build APK → Run workflow** in the repository, select a branch, and start the build.
+2. After the build succeeds, open that run and download `ios-style-alarm-debug-<run number>` under **Artifacts**.
+3. Extract the downloaded ZIP and install `app-debug.apk` on an Android 13+ device.
+
+Artifacts are retained for **14 days**. The APK uses a temporary debug signing key and is intended for testing, not store distribution. Signing keys may differ between runs or local builds; if an update cannot be installed, uninstall the previous app first (this clears its data).
+
 ---
 
 ## License and Acknowledgments
