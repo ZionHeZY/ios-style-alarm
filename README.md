@@ -4,12 +4,13 @@
 
 基于 Jetpack Compose 与 Android 13+ AGSL (`RuntimeShader`) 实现的 iOS 风格闹钟应用，包含独立封装的液态玻璃（Liquid Glass）光学控件库 `:glass`。
 
-公开版使用 Android 系统字体与通用几何闹钟图标，不包含 Apple 字体或 SF Symbols 资源。三张界面截图、液态玻璃滑块特写与全屏响铃动图均录自公开版；列表滚动、顶栏模糊及编辑面板动图保留早期本地研究版演示，字体及小图标可能不同，液态玻璃渲染与手势实现相同。本项目与 Apple 无隶属关系。
+公开版使用 Android 系统字体与通用几何闹钟图标，不包含 Apple 字体或 SF Symbols 资源。四张界面截图、顶部胶囊特写、液态玻璃滑块特写与全屏响铃动图均录自公开版；列表滚动、顶栏模糊及编辑面板动图保留早期本地研究版演示，字体及小图标可能不同，液态玻璃渲染与手势实现相同。本项目与 Apple 无隶属关系。
 
 <p align="center">
-  <img src="docs/assets/screen-list.png" width="31%" alt="Alarm List" />
-  <img src="docs/assets/screen-editor.png" width="31%" alt="Add Alarm Sheet" />
-  <img src="docs/assets/screen-ringing.png" width="31%" alt="Ringing Screen" />
+  <img src="docs/assets/screen-list.png" width="24%" alt="Alarm List" />
+  <img src="docs/assets/screen-editor.png" width="24%" alt="Add Alarm Sheet" />
+  <img src="docs/assets/screen-toast.png" width="24%" alt="In-App Alarm Capsule Toast" />
+  <img src="docs/assets/screen-ringing.png" width="24%" alt="Ringing Screen" />
 </p>
 
 ---
@@ -43,6 +44,14 @@
   <img src="docs/assets/ringing-slider.gif" width="36%" alt="Ringing Screen" />
 </p>
 
+### 4. 页面内灵动岛胶囊 Toast 与后台全屏响铃分流
+
+响铃呈现按前台状态自动分流：当前停留在闹钟页面时，顶部弹簧滑入纯黑胶囊 Toast（高频摆动模糊铃铛、`Zz` 稍后提醒、`✕` 立即关闭，点击胶囊展开全屏，上滑关闭）；处于桌面、其它应用后台或锁屏熄屏时，直接弹出全屏液态玻璃滑块页面（`RingingActivity`）。
+
+<p align="center">
+  <img src="docs/assets/alarm-toast-closeup.png" width="72%" alt="In-App Alarm Capsule Toast Close-up" />
+</p>
+
 ---
 
 ## 架构设计
@@ -58,7 +67,7 @@ ios-style-alarm/
 │       │   ├── data/                   # JSON 持久化、AlarmManager 精确调度、PCM 合成铃声
 │       │   ├── mvi/                    # 轻量 MviViewModel 基类（StateFlow + reduce）
 │       │   ├── ui/                     # 闹钟列表、渐进顶栏模糊、滚轮编辑面板与视差导航栈
-│       │   └── ring/                   # 响铃前台服务、锁屏唤醒 Activity 与稍后提醒状态流
+│       │   └── ring/                   # 响铃前台服务、页面内胶囊 Toast 与全屏响铃 Activity
 │       └── res/raw/
 │           └── progressive_top_blur.agsl
 └── glass/                              # 独立可复用 Liquid Glass GPU 控件库

@@ -1,6 +1,12 @@
 package tech.hezy.alarm.ui
 
 import android.text.format.DateFormat
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.snap
@@ -60,6 +66,16 @@ import kotlin.math.roundToInt
 fun AlarmHome(state: AlarmListState, dispatch: (AlarmIntent) -> Unit) {
     val palette = iosPalette(true)
     val is24 = DateFormat.is24HourFormat(LocalContext.current)
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var canOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) canOverlay = Settings.canDrawOverlays(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val backdrop = rememberGlassBackdrop()
     var sheet by remember { mutableFloatStateOf(0f) }
     val headerHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() +
@@ -93,6 +109,41 @@ fun AlarmHome(state: AlarmListState, dispatch: (AlarmIntent) -> Unit) {
                             fontSize = 13.sp,
                             modifier = Modifier.padding(IosMetrics.screenMargin),
                         )
+                    }
+                }
+                if (!canOverlay) {
+                    item {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = IosMetrics.screenMargin, vertical = 8.dp)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(palette.grouped)
+                                .clickable {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            Uri.parse("package:${context.packageName}"),
+                                        ),
+                                    )
+                                }
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                stringResource(R.string.allow_overlay),
+                                color = palette.secondary,
+                                fontSize = 13.sp,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                stringResource(R.string.allow),
+                                color = palette.blue,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
                 item {

@@ -43,6 +43,7 @@
     <string name="channel_name">Alarms</string>
     <string name="ringing">Alarm</string>
     <string name="allow_notifications">Allow notifications so alarms can wake the screen.</string>
+    <string name="allow_overlay">Allow Display over other apps so alarms open the full-screen glass slider from background.</string>
     <string name="allow">Allow</string>
     <string name="am">AM</string>
     <string name="pm">PM</string>

@@ -4,12 +4,13 @@
 
 An iOS-inspired alarm app built with Jetpack Compose and Android 13+ AGSL (`RuntimeShader`), with a reusable `:glass` module for liquid glass controls.
 
-The public version uses Android system fonts and generic geometric alarm icons. It does not bundle Apple fonts or SF Symbols assets. The three screenshots, slider close-up, and full-screen ringing animation were captured from the public build. The list scrolling, progressive blur, and editor animations show an earlier local research build: fonts and small icons may differ, but the glass rendering and gesture implementations are the same. This project is not affiliated with Apple.
+The public version uses Android system fonts and generic geometric alarm icons. It does not bundle Apple fonts or SF Symbols assets. The four screenshots, capsule toast close-up, slider close-up, and full-screen ringing animation were captured from the public build. The list scrolling, progressive blur, and editor animations show an earlier local research build: fonts and small icons may differ, but the glass rendering and gesture implementations are the same. This project is not affiliated with Apple.
 
 <p align="center">
-  <img src="docs/assets/screen-list.png" width="31%" alt="Alarm list" />
-  <img src="docs/assets/screen-editor.png" width="31%" alt="Add alarm sheet" />
-  <img src="docs/assets/screen-ringing.png" width="31%" alt="Ringing screen" />
+  <img src="docs/assets/screen-list.png" width="24%" alt="Alarm list" />
+  <img src="docs/assets/screen-editor.png" width="24%" alt="Add alarm sheet" />
+  <img src="docs/assets/screen-toast.png" width="24%" alt="In-app alarm capsule toast" />
+  <img src="docs/assets/screen-ringing.png" width="24%" alt="Ringing screen" />
 </p>
 
 ---
@@ -43,6 +44,14 @@ The add/edit sheet uses spring-driven entrance and dismissal animations, with a 
   <img src="docs/assets/ringing-slider.gif" width="36%" alt="Full-screen alarm and slide-to-stop interaction" />
 </p>
 
+### 4. In-App Capsule Toast and Background Full-Screen Routing
+
+Alarm presentation adapts to foreground context: when the alarm list screen is open, a pure-black Dynamic Island-style capsule toast springs down from the top with oscillating blurred bells, quick **Snooze (`Zz`)** and **Stop (`✕`)** buttons, tap-to-expand, and swipe-up dismissal; when the app is in the background, on another screen, or locked, the full-screen liquid glass slider (`RingingActivity`) opens directly.
+
+<p align="center">
+  <img src="docs/assets/alarm-toast-closeup.png" width="72%" alt="In-app alarm capsule toast close-up" />
+</p>
+
 ---
 
 ## Architecture
@@ -58,7 +67,7 @@ ios-style-alarm/
 │       │   ├── data/                   # JSON storage, AlarmManager, and synthesized PCM tones
 │       │   ├── mvi/                    # MviViewModel base with StateFlow and reduce
 │       │   ├── ui/                     # Alarm list, toolbar blur, editor, and navigation
-│       │   └── ring/                   # Foreground service, lock-screen activity, and snooze
+│       │   └── ring/                   # Foreground service, in-app capsule toast, and full-screen slider
 │       └── res/raw/
 │           └── progressive_top_blur.agsl
 └── glass/

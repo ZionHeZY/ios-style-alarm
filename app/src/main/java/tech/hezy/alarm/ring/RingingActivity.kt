@@ -1,5 +1,7 @@
 package tech.hezy.alarm.ring
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color as AndroidColor
 import android.os.Bundle
 import android.text.format.DateFormat
@@ -79,6 +81,16 @@ class RingingActivity : ComponentActivity() {
                     onStop = { model.dispatch(RingIntent.Stop) },
                 )
             }
+        }
+    }
+
+    companion object {
+        fun start(context: Context) {
+            context.startActivity(
+                Intent(context, RingingActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION,
+                ),
+            )
         }
     }
 }

@@ -43,6 +43,7 @@
     <string name="channel_name">闹钟</string>
     <string name="ringing">闹钟</string>
     <string name="allow_notifications">允许通知后，闹钟才能点亮屏幕。</string>
+    <string name="allow_overlay">开启“显示在其他应用上层”，处于后台或其它应用时可直接弹出全屏液态玻璃滑块。</string>
     <string name="allow">允许</string>
     <string name="am">上午</string>
     <string name="pm">下午</string>
