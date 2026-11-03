@@ -3,12 +3,13 @@ name: Build APK
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -39,3 +40,19 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish GitHub Release on tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          SHA=$(sha256sum "$APK" | awk '{print $1}')
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          NOTES="Android 13+ 测试版（新增闹钟页面顶部灵动岛胶囊 Toast，后台/锁屏直出全屏液态玻璃滑块）。下载 Assets 中的 app-debug.apk 安装；此 APK 使用 Debug 签名，不是商店发布包。若与已安装版本签名不同，需先卸载旧版（会清除应用数据）。APK 来自成功的 GitHub Actions 构建：${RUN_URL} 。SHA-256：${SHA}。"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$APK" --clobber
+            gh release edit "$GITHUB_REF_NAME" --title "${GITHUB_REF_NAME} — Debug 测试版" --notes "$NOTES"
+          else
+            gh release create "$GITHUB_REF_NAME" "$APK" --title "${GITHUB_REF_NAME} — Debug 测试版" --notes "$NOTES" --latest
+          fi
